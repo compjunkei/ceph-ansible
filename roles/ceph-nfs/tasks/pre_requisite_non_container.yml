@@ -223,3 +223,42 @@
     owner: "root"
     group: "root"
     mode: "0755"
+
+- name: check if nfs-utils is installed on Red Hat
+  shell: rpm -q nfs-utils | grep 'package nfs-utils is not installed'
+  register: rpm_nfs_utils_check
+  when:
+    - ansible_os_family == 'RedHat'
+
+- name: check if nfs-kernel-server is installed on Debian
+  shell: dpkg-query -s nfs-kernel-server | grep 'install ok installed'
+  register: dpkg_nfs_kernel_server_check
+  when:
+    - ansible_os_family == 'Debian'
+
+- name: stop nfs server service on Red Hat
+  systemd:
+    name: nfs-server
+    state: stopped
+    enabled: no
+  when:
+    - ansible_os_family == 'RedHat'
+    - rpm_nfs_utils_check.rc == 1
+
+- name: stop nfs server service on Suse
+  systemd:
+    name: nfsserver
+    state: stopped
+    enabled: no
+  when:
+    - ansible_os_family == 'Suse'
+      
+- name: stop nfs nfs server service on Debian
+  systemd:
+    name: nfs-kernel-server
+    state: stopped
+    enabled: no
+  when:
+    - ansible_os_family == 'Debian'
+    - dpkg_nfs_kernel_server_check.rc == 0
+
